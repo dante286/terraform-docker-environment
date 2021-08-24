@@ -16,8 +16,8 @@ domain name - the local domain that you will be using this on.  Such as "example
 
 # Usage
 Simply:
-`terraform plan -var="domain_name=example.com"`
-`terraform apply -var="domain_name=example.com"`
+`terraform plan -var-file="variables.tfvars"`
+`terraform apply -var-file="variables.tfvars"`
 
 To delete:
-`terraform destroy -var="domain_name=example.com"`
+`terraform destroy -var=-file="variables.tfvars"`

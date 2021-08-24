@@ -54,5 +54,67 @@ resource "docker_volume" "transmission_watch" {
 
 resource "docker_container" "rproxy_container" {
   name = "rproxy"
-  image = docker_image.rproxy_latest
+  image = docker_image.rproxy_latest.id
+  restart = "always"
+  volumes {
+    host_path = var.ssl_certs
+    container_path = "/etc/nginx/certs"
+    volume_name = docker_volume.jenkins_volume.name
+  }
+  volumes {
+    host_path = "/var/run/docker.sock"
+    container_path = "/var/run/docker.sock"
+    read_only = true
+  }
+  ports {
+    internal = "80"
+    external = "80"
+  }
+  ports {
+    internal = "443"
+    external = "443"
+  }
+}
+
+resource "docker_container" "jenkins_container" {
+  name = "jenkins"
+  image = docker_image.jenkins_latest.id
+  restart = "always"
+  volumes {
+    container_path = "/var/jenkins_home"
+    volume_name = docker_volume.jenkins_volume.name
+  }
+  volumes {
+    host_path = "/var/run/docker.sock"
+    container_path = "/var/run/docker.sock"
+  }
+  env = [
+    "VIRTUAL_HOST=jenkins.${var.domain_name}",
+    "VIRTUAL_PORT=8080"
+  ]
+}
+
+resource "docker_container" "transmission_container" {
+  name = "transmission"
+  image = docker_image.transmission_latest.id
+  restart = "always"
+  volumes {
+    container_path = "/config"
+    volume_name = docker_volume.transmission_config.name
+  }
+  volumes {
+    container_path = "/watch"
+    volume_name = docker_volume.transmission_watch.name
+  }
+  volumes {
+    host_path = var.transmission_download_storage
+    container_path = "/downloads"
+  }
+  env = [
+    "GID=1000",
+    "PUID=1000",
+    "TZ=America/New_York",
+    "VIRTUAL_HOST=torrent.${var.domain_name}",
+    "VIRTUAL_PORT=9091"
+  ]
 }
