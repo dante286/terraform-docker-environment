@@ -33,6 +33,9 @@ resource "docker_image" "jenkins_latest" {
 
 resource "docker_volume" "jenkins_volume" {
   name = "jenkins_data"
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 data "docker_registry_image" "transmission_image" {
@@ -46,6 +49,9 @@ resource "docker_image" "transmission_latest" {
 
 resource "docker_volume" "transmission_config" {
   name = "transmission_config"
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "docker_volume" "transmission_watch" {
@@ -54,16 +60,15 @@ resource "docker_volume" "transmission_watch" {
 
 resource "docker_container" "rproxy_container" {
   name = "rproxy"
-  image = docker_image.rproxy_latest.id
+  image = docker_image.rproxy_latest.name
   restart = "always"
   volumes {
     host_path = var.ssl_certs
     container_path = "/etc/nginx/certs"
-    volume_name = docker_volume.jenkins_volume.name
   }
   volumes {
     host_path = "/var/run/docker.sock"
-    container_path = "/var/run/docker.sock"
+    container_path = "/tmp/docker.sock"
     read_only = true
   }
   ports {
@@ -78,7 +83,7 @@ resource "docker_container" "rproxy_container" {
 
 resource "docker_container" "jenkins_container" {
   name = "jenkins"
-  image = docker_image.jenkins_latest.id
+  image = docker_image.jenkins_latest.name
   restart = "always"
   volumes {
     container_path = "/var/jenkins_home"
@@ -96,7 +101,7 @@ resource "docker_container" "jenkins_container" {
 
 resource "docker_container" "transmission_container" {
   name = "transmission"
-  image = docker_image.transmission_latest.id
+  image = docker_image.transmission_latest.name
   restart = "always"
   volumes {
     container_path = "/config"
