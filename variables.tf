@@ -12,8 +12,3 @@ variable "ssl_certs" {
   type        = string
   description = "Location for ssl certs for nginx to use"
 }
-
-variable "transmission_download_storage" {
-  type        = string
-  description = "Shared storage location for where transmission can put downloads"
-}

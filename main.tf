@@ -38,26 +38,6 @@ resource "docker_volume" "jenkins_volume" {
   }
 }
 
-data "docker_registry_image" "transmission_image" {
-  name = "linuxserver/transmission"
-}
-
-resource "docker_image" "transmission_latest" {
-  name          = data.docker_registry_image.transmission_image.name
-  pull_triggers = [data.docker_registry_image.transmission_image.sha256_digest]
-}
-
-resource "docker_volume" "transmission_config" {
-  name = "transmission_config"
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "docker_volume" "transmission_watch" {
-  name = "transmission_watch"
-}
-
 resource "docker_container" "rproxy_container" {
   name    = "rproxy"
   image   = docker_image.rproxy_latest.name
@@ -107,41 +87,6 @@ resource "docker_container" "jenkins_container" {
   depends_on = [
     docker_image.jenkins_latest,
     docker_volume.jenkins_volume,
-    docker_container.rproxy_container
-  ]
-}
-
-resource "docker_container" "transmission_container" {
-  name    = "transmission"
-  image   = docker_image.transmission_latest.name
-  restart = "always"
-  volumes {
-    container_path = "/config"
-    volume_name    = docker_volume.transmission_config.name
-    read_only      = false
-  }
-  volumes {
-    container_path = "/watch"
-    read_only      = false
-    volume_name    = docker_volume.transmission_watch.name
-  }
-  volumes {
-    host_path      = var.transmission_download_storage
-    container_path = "/downloads"
-    read_only      = false
-  }
-  env = [
-    "GID=1000",
-    "PUID=1000",
-    "TZ=America/New_York",
-    "VIRTUAL_HOST=torrent.${var.domain_name}",
-    "VIRTUAL_PORT=9091"
-  ]
-
-  depends_on = [
-    docker_image.transmission_latest,
-    docker_volume.transmission_config,
-    docker_volume.transmission_watch,
     docker_container.rproxy_container
   ]
 }
